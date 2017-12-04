@@ -112,7 +112,8 @@ def main():
 			else :
 				target_y_batch.append((reward_batch[i].data + GAMMA * torch.max(next_Q_value_batch[i].data)).numpy()[0])
 		#print(target_y_batch)	
-		loss = criterion(Q_value_batch,Variable(translate(np.array(target_y_batch)), volatile=False))
+		t = Variable(translate(np.array(target_y_batch)), volatile=False)
+		loss = criterion(Q_value_batch,t)
 	    # Optimize the model
 		optimizer.zero_grad()
 		loss.backward()
@@ -143,7 +144,7 @@ def main():
 			for i in range(TEST):
 				state = env.reset()
 				for j in range(STEP):
-					env.render()
+					#env.render()
 					action = do_action(state)
 					state,reward,done,_ = env.step(action[0,0])
 					total_reward += reward
@@ -153,7 +154,7 @@ def main():
 			print('episode:{},Evaluation Average Reward:{}'.format(episode, ave_reward))
 			episode_durations.append(episode)
 			ave_reward_plot.append(ave_reward)	
-			plot_durations()
+			#plot_durations()
 			print(episode_durations, ave_reward_plot)
 			if ave_reward >= 200:
 				break

@@ -21,7 +21,7 @@ from torch.autograd import Variable
 # Hyper parameter
 STATE_DIM = 4
 ACTION_DIM = 2
-STEP = 2000
+STEP = 3000
 SAMPLE_NUMS = 50
 
 class ActorNetwork(nn.Module):
@@ -121,11 +121,16 @@ def main():
         #train actor network
         actor_network_optim.zero_grad()
         log_softmax_action = actor_network(states_var)
+
         vs = value_network(states_var).detach()#detach from the compute graph
         #caculate qs
-        qs = Variable(torch.Tensor(discount_reward(rewards, 0.99, final_r)))
+        qs = Variable(torch.Tensor(discount_reward(
+            rewards, 0.99, final_r))).view(-1, 1)
         advantages = qs - vs
-        actor_network_loss = - torch.mean(torch.sum(log_softmax_action*actions_var,1)*advantages)
+        a = torch.sum(log_softmax_action * actions_var, 1).view(-1,1)
+        b = a * advantages
+        actor_network_loss =  -torch.mean(b)
+        
         actor_network_loss.backward()
         torch.nn.utils.clip_grad_norm(actor_network.parameters(),0.5)
         actor_network_optim.step()

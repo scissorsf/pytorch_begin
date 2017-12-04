@@ -62,7 +62,7 @@ def roll_out(actor_network, task, sample_nums, value_network, init_state, noise,
         #to be modified
         tanh_action = actor_network(Variable(torch.Tensor([state]))).detach()
         action = np.multiply(tanh_action.cpu().data.numpy()[
-                              0], [20,20,20])
+                              0], [2,2,2])
         #add  noise to explore
         ex_action = action + (noise.sample() * action_lim)
         #ex_action = action
@@ -107,8 +107,8 @@ def main():
     init_state = task.reset()
     STATE_DIM = task.observation_space.shape[0]
     ACTION_DIM = task.action_space.shape[0]
-    STEP = 2000
-    SAMPLE_NUMS = 8
+    STEP = 5000
+    SAMPLE_NUMS = 200
     ACTION_LIM = task.action_space.high[0]
     #init noise
     noise = utils.OrnsteinUhlenbeckActionNoise(ACTION_DIM)
@@ -129,15 +129,28 @@ def main():
         init_state = current_state
         actions_var = Variable(torch.Tensor(actions).view(-1, ACTION_DIM))
         states_var = Variable(torch.Tensor(states).view(-1, STATE_DIM))
-
+        lenth = len(actions)
         #train actor network
         actor_network_optim.zero_grad()
-        tanh_action =actor_network(states_var)
+        #tanh_action =actor_network(states_var) #[Nx3]
+        #ones = Variable(torch.FloatTensor(np.ones(shape=(lenth, 1))))
+
+        #action_mean = actions_var.mean(0) * ones  # [3]
+        #action_std = actions_var.std(0) * ones  # [3]
+        #action_logstd = actions_var.log() * ones  # [3]
+
+        #action_log_probs = ((tanh_action - action_mean) / action_std).pow(2)
+        #action_log_probs = -0.5 * ((tanh_action - action_mean) / action_std).pow(2) - 0.5 * math.log(2 * math.pi) - action_logstd
+        #
+        #    
         vs = value_network(states_var).detach()#detach from the compute graph
-        qs = Variable(torch.Tensor(discount_reward(rewards, 0.99, final_r)))
+        qs = Variable(torch.Tensor(discount_reward(rewards, 0.99, final_r))).view(-1,1)
         advantages = qs - vs
-        #actor_network_loss = - torch.mean(torch.sum(tanh_action*actions_var,1)*advantages)
-        actor_network_loss =torch.mean(torch.sum(tanh_action*actions_var,1)*advantages)
+        actor_network_loss = torch.mean(
+            torch.sum(action_log_probs, 1) * advantages)
+
+        #a = torch.sum(tanh_action, 1).view(-1, 1)
+        #actor_network_loss = -torch.mean(a*advantages)
         actor_network_loss.backward()
         torch.nn.utils.clip_grad_norm(actor_network.parameters(),0.5)
         actor_network_optim.step()
@@ -158,20 +171,20 @@ def main():
             test_task = gym.make("InjectWorld-v1")
             for test_epi in range(10):
                 state = test_task.reset()
-                for test_step in range(10):
+                for test_step in range(50):
                     tanh_action = actor_network(Variable(torch.Tensor([state])))
                     action = np.multiply(tanh_action.data.numpy()[
-                                         0], [20, 20, 20])
+                                         0], [2, 2, 2])
                     next_state, reward, done, _ = test_task.step(action)
                     result += reward
                     state =next_state
                     if done:
                         break
             print("step", step +1, "test result", result/10)
-            steps.append(step+1)
-            test_results.append(result/10)
-            episode_durations.append(step + 1)
-            plot_durations(plt, episode_durations, test_results)
+        #    steps.append(step+1)
+        #    test_results.append(result/10)
+        #    episode_durations.append(step + 1)
+        #    plot_durations(plt, episode_durations, test_results)
 
 
 if __name__ == '__main__':
