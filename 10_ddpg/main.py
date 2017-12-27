@@ -17,8 +17,9 @@ import train
 #env = gym.make('BipedalWalker-v2')
 #env = gym.make('Pendulum-v0')
 env = gym.make('InjectWorld-v1')
-
-MAX_EPISODES = 2000
+env = env.unwrapped
+print(env.get_goal())
+MAX_EPISODES = 300
 MAX_STEPS = 100
 MAX_BUFFER = 1000000
 MAX_TOTAL_REWARD = 300
@@ -34,6 +35,8 @@ ram = buffer.MemoryBuffer(MAX_BUFFER)
 trainer = train.Trainer(S_DIM, A_DIM, A_MAX, ram)
 def main():
     plt.ion()
+    gird_size = (2, 2)
+    st_y=[]
     ep_x = []
     re_y = []
     for _ep in range(MAX_EPISODES):
@@ -70,8 +73,8 @@ def main():
             # perform optimization
             trainer.optimize()
             if done:
-                
                 break
+        st_y.append(r)
         ep_x.append(_ep)
         re_y.append(result)
         print('EPISODE :- ', _ep,result)
@@ -83,7 +86,10 @@ def main():
         #if _ep % 100 == 0:
         #	trainer.save_models(_ep)
         plt.cla()
-        plt.plot(ep_x,re_y)
+        plt.subplot2grid(gird_size, (0, 0), rowspan=1, colspan=2)
+        plt.plot(ep_x, re_y)
+       # plt.subplot2grid(gird_size, (1, 0), rowspan=1, colspan=2)
+        #plt.plot(ep_x, st_y)
         plt.pause(0.0001)
     plt.ioff()  
     plt.show()
