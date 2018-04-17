@@ -21,9 +21,9 @@ learning_rate = 0.0002
 num_epoch = 10
 
 mnist_train = dset.MNIST(
-    "./data/minst/", train=True, transform=transforms.ToTensor(), target_transform=None)
+    "./data/mnist/", train=True, transform=transforms.ToTensor(), target_transform=None)
 mnist_test = dset.MNIST(
-    "./data/minst/", train=False, transform=transforms.ToTensor(), target_transform=None, download=True)
+    "./data/mnist/", train=False, transform=transforms.ToTensor(), target_transform=None, download=True)
 
 train_loader = torch.utils.data.DataLoader(
     mnist_train, batch_size=batch_size, shuffle=True, num_workers=2, drop_last=True)
@@ -112,7 +112,7 @@ def main():
     print("\n------Starting to plot------\n")
 
     mnist_test = dset.MNIST(
-        "./data/minst/", train=False, target_transform=None, download=False)
+        "./data/mnist/", train=False, target_transform=None, download=False)
 
     for i in range(len(result)):
         #print("{}/{}".format(i, len(result)))
